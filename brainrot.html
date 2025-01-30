@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Clone</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            width: 400px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            max-height: 450px; /* Increased from 420px to 450px to accommodate all rows */
+            margin-bottom: 20px; /* Add bottom margin for spacing */
+        }
+
+        .guess-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px; /* Ensure consistent margin between rows */
+            justify-content: center;
+            height: 62px; /* Explicit height for each row (60px + 2px border) */
+        }
+
+        .letter-box {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #3a3a3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: transform 0.15s ease-in-out;
+        }
+
+        .keyboard {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .key {
+            background-color: #818384;
+            color: white;
+            border: none;
+            padding: 20px;
+            min-width: 45px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin: 2px;
+            transition: background-color 0.3s ease;
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .correct {
+            background-color: #538d4e;
+        }
+
+        .present {
+            background-color: #b59f3b;
+        }
+
+        .absent {
+            background-color: #3a3a3c;
+        }
+
+        @keyframes flipIn {
+            0% {
+                transform: rotateX(0deg);
+                background-color: transparent;
+            }
+            45% {
+                transform: rotateX(90deg);
+                background-color: transparent;
+            }
+            55% {
+                transform: rotateX(90deg);
+            }
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+        .letter-box.animated {
+            animation: flipIn 0.3s ease-in-out; /* Changed from 0.5s to 0.3s */
+            animation-fill-mode: forwards;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #121212;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #3a3a3c;
+            z-index: 100;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #3a3a3c;
+            border-radius: 5px;
+        }
+
+        .share-button {
+            background: #538d4e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .dev-mode {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #538d4e;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: none;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .share-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .share-options button {
+            flex: 1;
+            background: #538d4e;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .share-preview {
+            font-family: monospace;
+            background: #3a3a3c;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre;
+            text-align: center;
+        }
+
+        .entry-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #121212;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-modes {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 300px;
+        }
+
+        .mode-button {
+            padding: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            background: #538d4e;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .mode-button:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-button.daily {
+            background: #538d4e;
+        }
+
+        .mode-button.multiplayer {
+            background: #b59f3b;
+        }
+
+        .mode-button.unlimited {
+            background: #3a3a3c;
+        }
+
+        .multiplayer-overlay {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #121212;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1001;
+        }
+
+        .multiplayer-overlay input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #3a3a3c;
+            border: none;
+            color: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="entryScreen" class="entry-screen">
+        <h1>Wordle Clone</h1>
+        <div class="game-modes">
+            <button class="mode-button daily" onclick="startGame('daily')">Daily Wordle</button>
+            <button class="mode-button multiplayer" onclick="startGame('multiplayer')">Multiplayer</button>
+            <button class="mode-button unlimited" onclick="startGame('unlimited')">Wordle Unlimited</button>
+        </div>
+    </div>
+
+    <div id="multiplayerOverlay" class="multiplayer-overlay">
+        <h2>Multiplayer Mode</h2>
+        <input type="text" id="roomCode" readonly placeholder="Room code...">
+        <button class="mode-button" onclick="copyRoomLink()">Copy Link</button>
+        <button class="mode-button" onclick="startMultiplayerGame()">Start Game</button>
+    </div>
+
+    <h1>Wordle Clone</h1>
+    <div class="game-container" id="game">
+        <!-- Guess rows will be added here -->
+    </div>
+    <div class="keyboard" id="keyboard">
+        <div class="keyboard-row">
+            <button class="key" data-key="q">q</button><button class="key" data-key="w">w</button><button class="key" data-key="e">e</button>
+            <button class="key" data-key="r">r</button><button class="key" data-key="t">t</button><button class="key" data-key="y">y</button>
+            <button class="key" data-key="u">u</button><button class="key" data-key="i">i</button><button class="key" data-key="o">o</button>
+            <button class="key" data-key="p">p</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="key" data-key="a">a</button><button class="key" data-key="s">s</button><button class="key" data-key="d">d</button>
+            <button class="key" data-key="f">f</button><button class="key" data-key="g">g</button><button class="key" data-key="h">h</button>
+            <button class="key" data-key="j">j</button><button class="key" data-key="k">k</button><button class="key" data-key="l">l</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="key" data-key="enter">Enter</button>
+            <button class="key" data-key="z">z</button><button class="key" data-key="x">x</button><button class="key" data-key="c">c</button>
+            <button class="key" data-key="v">v</button><button class="key" data-key="b">b</button><button class="key" data-key="n">n</button>
+            <button class="key" data-key="m">m</button>
+            <button class="key" data-key="backspace">⌫</button>
+        </div>
+    </div>
+
+    <div id="summaryModal" class="modal">
+        <h2>Game Summary</h2>
+        <div class="stats">
+            <div class="stat-item">
+                <div>Guesses</div>
+                <div id="totalGuesses">-</div>
+            </div>
+            <div class="stat-item">
+                <div>Avg Time/Guess</div>
+                <div id="avgTime">-</div>
+            </div>
+            <div class="stat-item">
+                <div>Accuracy</div>
+                <div id="accuracy">-</div>
+            </div>
+            <div class="stat-item">
+                <div>Total Time</div>
+                <div id="totalTime">-</div>
+            </div>
+        </div>
+        <div class="share-preview" id="sharePreview"></div>
+        <div class="share-options">
+            <button onclick="shareResults('text')">Share Text</button>
+            <button onclick="shareResults('grid')">Share Grid</button>
+        </div>
+    </div>
+
+    <div id="devMode" class="dev-mode">
+        Answer: <span id="devAnswer"></span>
+    </div>
+
+    <script>
+        const WORD_LENGTH = 5;
+        const TRIES = 6; // Changed back to 6
+        const WORDS = ['WORLD', 'GHOST', 'PLANT', 'BRAIN', 'STEAM', 'PIXEL'];
+        
+        let currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+        let currentRow = 0;
+        let currentTile = 0;
+        let isGameOver = false;
+        let startTime = Date.now();
+        let guessTimes = [];
+        let isDevMode = false;
+
+        // Game mode variables
+        let currentGameMode = '';
+        let roomCode = '';
+        
+        function getDailyWord() {
+            // Generate a word based on the current date
+            const today = new Date();
+            const dateString = `${today.getFullYear()}${today.getMonth()}${today.getDate()}`;
+            const wordIndex = Number(dateString) % WORDS.length;
+            return WORDS[wordIndex];
+        }
+
+        function startGame(mode) {
+            currentGameMode = mode;
+            const entryScreen = document.getElementById('entryScreen');
+            
+            switch(mode) {
+                case 'daily':
+                    currentWord = getDailyWord();
+                    entryScreen.style.display = 'none';
+                    break;
+                    
+                case 'multiplayer':
+                    roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    const roomLink = `${window.location.href}?room=${roomCode}`;
+                    document.getElementById('roomCode').value = roomLink;
+                    document.getElementById('multiplayerOverlay').style.display = 'block';
+                    // In a real implementation, you'd set up WebSocket connection here
+                    break;
+                    
+                case 'unlimited':
+                    currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+                    entryScreen.style.display = 'none';
+                    break;
+            }
+        }
+
+        function copyRoomLink() {
+            const roomInput = document.getElementById('roomCode');
+            roomInput.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        function startMultiplayerGame() {
+            // In a real implementation, you'd wait for other players
+            document.getElementById('multiplayerOverlay').style.display = 'none';
+            document.getElementById('entryScreen').style.display = 'none';
+        }
+
+        // Add room code check on page load
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const room = urlParams.get('room');
+            if (room) {
+                currentGameMode = 'multiplayer';
+                roomCode = room;
+                document.getElementById('entryScreen').style.display = 'none';
+                // In a real implementation, you'd connect to the room here
+            }
+            initBoard();
+        };
+
+        // Create game board
+        function initBoard() {
+            const gameDiv = document.getElementById('game');
+            // Clear existing rows if any
+            gameDiv.innerHTML = '';
+            
+            for (let i = 0; i < TRIES; i++) {
+                const row = document.createElement('div');
+                row.className = 'guess-row';
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'letter-box';
+                    row.appendChild(tile);
+                }
+                gameDiv.appendChild(row);
+            }
+        }
+
+        function addLetter(letter) {
+            if (currentRow >= TRIES) return; // Add this line to prevent extra guesses
+            if (currentTile === 0) startTime = Date.now();
+            if (currentTile < WORD_LENGTH && currentRow < TRIES) {
+                const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
+                const tile = row.children[currentTile];
+                tile.textContent = letter;
+                tile.setAttribute('data-letter', letter);
+                currentTile++;
+            }
+        }
+
+        function deleteLetter() {
+            if (currentRow >= TRIES) return; // Add this line to prevent modifications after game over
+            if (currentTile > 0) {
+                currentTile--;
+                const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
+                const tile = row.children[currentTile];
+                tile.textContent = '';
+                tile.removeAttribute('data-letter');
+            }
+        }
+
+        async function checkGuess() {
+            const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
+            const tiles = row.children;
+            const guess = Array.from(tiles).map(tile => tile.getAttribute('data-letter')).join('');
+
+            if (guess.length !== WORD_LENGTH) return;
+
+            let checkWord = currentWord;
+            
+            // Animate and check each letter sequentially
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                await new Promise(resolve => setTimeout(resolve, 150 * i)); // Changed from 250ms to 150ms
+                
+                tiles[i].classList.add('animated');
+                
+                if (guess[i] === currentWord[i]) {
+                    setTimeout(() => {
+                        tiles[i].classList.add('correct');
+                        document.querySelector(`.key[data-key="${guess[i].toLowerCase()}"]`)?.classList.add('correct');
+                    }, 150); // Changed from 250ms to 150ms
+                    checkWord = checkWord.substring(0, i) + '_' + checkWord.substring(i + 1);
+                } else if (checkWord.includes(guess[i])) {
+                    setTimeout(() => {
+                        tiles[i].classList.add('present');
+                        document.querySelector(`.key[data-key="${guess[i].toLowerCase()}"]`)?.classList.add('present');
+                    }, 150); // Changed from 250ms to 150ms
+                    checkWord = checkWord.replace(guess[i], '_');
+                } else {
+                    setTimeout(() => {
+                        tiles[i].classList.add('absent');
+                        document.querySelector(`.key[data-key="${guess[i].toLowerCase()}"]`)?.classList.add('absent');
+                    }, 150); // Changed from 250ms to 150ms
+                }
+            }
+
+            // Wait for animations to complete
+            await new Promise(resolve => setTimeout(resolve, 800)); // Changed from 1500ms to 800ms
+
+            if (currentRow === TRIES - 1 && guess !== currentWord) {
+                isGameOver = true;
+                alert('Game Over! The word was ' + currentWord);
+                showGameSummary(); // Add this to show summary on loss
+                return;
+            }
+
+            if (guess === currentWord) {
+                isGameOver = true;
+                guessTimes.push(Date.now() - startTime);
+                showGameSummary();
+                return;
+            }
+
+            currentRow++;
+            currentTile = 0;
+        }
+
+        function calculateAccuracy(guesses) {
+            let totalAccuracy = 0;
+            const guessRows = document.querySelectorAll('.guess-row');
+            
+            for (let i = 0; i <= currentRow; i++) {
+                const tiles = guessRows[i].children;
+                let rowAccuracy = 0;
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    if (tiles[j].classList.contains('correct')) rowAccuracy += 100;
+                    else if (tiles[j].classList.contains('present')) rowAccuracy += 50;
+                }
+                totalAccuracy += rowAccuracy / WORD_LENGTH;
+            }
+            return Math.round(totalAccuracy / (currentRow + 1));
+        }
+
+        function formatTime(ms) {
+            return (ms / 1000).toFixed(1) + 's';
+        }
+
+        function showGameSummary() {
+            const totalGuesses = currentRow + 1;
+            const totalTimeMs = guessTimes.reduce((a, b) => a + b, 0);
+            const avgTimeMs = totalTimeMs / totalGuesses;
+            const accuracy = calculateAccuracy(totalGuesses);
+
+            document.getElementById('totalGuesses').textContent = totalGuesses;
+            document.getElementById('avgTime').textContent = formatTime(avgTimeMs);
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('totalTime').textContent = formatTime(totalTimeMs);
+
+            document.getElementById('sharePreview').textContent = generateEmojiGrid();
+            document.getElementById('summaryModal').style.display = 'block';
+        }
+
+        function generateEmojiGrid() {
+            const rows = document.querySelectorAll('.guess-row');
+            let gridString = `Wordle Clone ${currentRow + 1}/6\n\n`; // Changed back to /6
+            
+            for (let i = 0; i <= currentRow; i++) {
+                const tiles = rows[i].children;
+                for (let j = 0; j < WORD_LENGTH; j++) {
+                    if (tiles[j].classList.contains('correct')) {
+                        gridString += '🟩';
+                    } else if (tiles[j].classList.contains('present')) {
+                        gridString += '🟨';
+                    } else if (tiles[j].classList.contains('absent')) {
+                        gridString += '⬛';
+                    }
+                }
+                gridString += '\n';
+            }
+            return gridString;
+        }
+
+        function shareResults(type = 'text') {
+            const guessCount = currentRow + 1;
+            const accuracy = calculateAccuracy(guessCount);
+            const totalTime = formatTime(guessTimes.reduce((a, b) => a + b, 0));
+            
+            let shareText;
+            let modeText = '';
+            switch(currentGameMode) {
+                case 'daily':
+                    modeText = '📅 Daily Wordle\n';
+                    break;
+                case 'multiplayer':
+                    modeText = `👥 Multiplayer (Room: ${roomCode})\n`;
+                    break;
+                case 'unlimited':
+                    modeText = '🎮 Unlimited Mode\n';
+                    break;
+            }
+            
+            if (type === 'grid') {
+                shareText = modeText + generateEmojiGrid();
+            } else {
+                shareText = modeText + `🎯 Wordle Clone Results:\n` +
+                           `✨ Solved in ${guessCount}/6 tries\n` + // Changed back to /6
+                           `🎯 Accuracy: ${accuracy}%\n` +
+                           `⏱️ Time: ${totalTime}\n` +
+                           `#WordleClone`;
+            }
+
+            // Update preview
+            document.getElementById('sharePreview').textContent = shareText;
+
+            if (navigator.share) {
+                navigator.share({
+                    text: shareText
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareText)
+                    .then(() => alert('Results copied to clipboard!'))
+                    .catch(console.error);
+            }
+        }
+
+        function toggleDevMode() {
+            isDevMode = !isDevMode;
+            const devModeEl = document.getElementById('devMode');
+            devModeEl.style.display = isDevMode ? 'block' : 'none';
+            document.getElementById('devAnswer').textContent = isDevMode ? currentWord : '';
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', e => {
+            // Dev mode hotkey
+            if (e.key === 'B' && e.shiftKey) {
+                toggleDevMode();
+                return;
+            }
+
+            if (isGameOver) return;
+
+            if (e.key === 'Enter') {
+                checkGuess();
+            } else if (e.key === 'Backspace') {
+                deleteLetter();
+            } else if (e.key.match(/^[a-zA-Z]$/)) {
+                addLetter(e.key.toUpperCase());
+            }
+        });
+
+        document.getElementById('keyboard').addEventListener('click', e => {
+            if (!e.target.classList.contains('key')) return;
+            
+            const key = e.target.textContent.toLowerCase();
+            if (key === 'enter') {
+                checkGuess();
+            } else if (key === '⌫') {
+                deleteLetter();
+            } else {
+                addLetter(key.toUpperCase());
+            }
+        });
+
+        // Initialize game
+        initBoard();
+    </script>
+</body>
+</html>
