@@ -46,7 +46,7 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/wordle-clone.git
+https://github.com/TechnobladeSSM/Brainrottle.git
 ```
 
 2. Open `brainrot.html` in your web browser
