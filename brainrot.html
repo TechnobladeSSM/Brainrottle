@@ -261,6 +261,45 @@
             color: white;
             border-radius: 4px;
         }
+
+        .game-content {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+            20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .error-message {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 59, 48, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1002;
+        }
+
+        .error-message.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -280,68 +319,80 @@
         <button class="mode-button" onclick="startMultiplayerGame()">Start Game</button>
     </div>
 
-    <h1>Wordle Clone</h1>
-    <div class="game-container" id="game">
-        <!-- Guess rows will be added here -->
-    </div>
-    <div class="keyboard" id="keyboard">
-        <div class="keyboard-row">
-            <button class="key" data-key="q">q</button><button class="key" data-key="w">w</button><button class="key" data-key="e">e</button>
-            <button class="key" data-key="r">r</button><button class="key" data-key="t">t</button><button class="key" data-key="y">y</button>
-            <button class="key" data-key="u">u</button><button class="key" data-key="i">i</button><button class="key" data-key="o">o</button>
-            <button class="key" data-key="p">p</button>
+    <div class="game-content" id="gameContent">
+        <h1>Wordle Clone</h1>
+        <div class="game-container" id="game">
+            <!-- Guess rows will be added here -->
         </div>
-        <div class="keyboard-row">
-            <button class="key" data-key="a">a</button><button class="key" data-key="s">s</button><button class="key" data-key="d">d</button>
-            <button class="key" data-key="f">f</button><button class="key" data-key="g">g</button><button class="key" data-key="h">h</button>
-            <button class="key" data-key="j">j</button><button class="key" data-key="k">k</button><button class="key" data-key="l">l</button>
+        <div class="keyboard" id="keyboard">
+            <div class="keyboard-row">
+                <button class="key" data-key="q">q</button><button class="key" data-key="w">w</button><button class="key" data-key="e">e</button>
+                <button class="key" data-key="r">r</button><button class="key" data-key="t">t</button><button class="key" data-key="y">y</button>
+                <button class="key" data-key="u">u</button><button class="key" data-key="i">i</button><button class="key" data-key="o">o</button>
+                <button class="key" data-key="p">p</button>
+            </div>
+            <div class="keyboard-row">
+                <button class="key" data-key="a">a</button><button class="key" data-key="s">s</button><button class="key" data-key="d">d</button>
+                <button class="key" data-key="f">f</button><button class="key" data-key="g">g</button><button class="key" data-key="h">h</button>
+                <button class="key" data-key="j">j</button><button class="key" data-key="k">k</button><button class="key" data-key="l">l</button>
+            </div>
+            <div class="keyboard-row">
+                <button class="key" data-key="enter">Enter</button>
+                <button class="key" data-key="z">z</button><button class="key" data-key="x">x</button><button class="key" data-key="c">c</button>
+                <button class="key" data-key="v">v</button><button class="key" data-key="b">b</button><button class="key" data-key="n">n</button>
+                <button class="key" data-key="m">m</button>
+                <button class="key" data-key="backspace">⌫</button>
+            </div>
         </div>
-        <div class="keyboard-row">
-            <button class="key" data-key="enter">Enter</button>
-            <button class="key" data-key="z">z</button><button class="key" data-key="x">x</button><button class="key" data-key="c">c</button>
-            <button class="key" data-key="v">v</button><button class="key" data-key="b">b</button><button class="key" data-key="n">n</button>
-            <button class="key" data-key="m">m</button>
-            <button class="key" data-key="backspace">⌫</button>
+
+        <div id="summaryModal" class="modal">
+            <h2>Game Summary</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div>Guesses</div>
+                    <div id="totalGuesses">-</div>
+                </div>
+                <div class="stat-item">
+                    <div>Avg Time/Guess</div>
+                    <div id="avgTime">-</div>
+                </div>
+                <div class="stat-item">
+                    <div>Accuracy</div>
+                    <div id="accuracy">-</div>
+                </div>
+                <div class="stat-item">
+                    <div>Total Time</div>
+                    <div id="totalTime">-</div>
+                </div>
+            </div>
+            <div class="share-preview" id="sharePreview"></div>
+            <div class="share-options">
+                <button onclick="shareResults('text')">Share Text</button>
+                <button onclick="shareResults('grid')">Share Grid</button>
+            </div>
+        </div>
+
+        <div id="devMode" class="dev-mode">
+            Answer: <span id="devAnswer"></span>
         </div>
     </div>
 
-    <div id="summaryModal" class="modal">
-        <h2>Game Summary</h2>
-        <div class="stats">
-            <div class="stat-item">
-                <div>Guesses</div>
-                <div id="totalGuesses">-</div>
-            </div>
-            <div class="stat-item">
-                <div>Avg Time/Guess</div>
-                <div id="avgTime">-</div>
-            </div>
-            <div class="stat-item">
-                <div>Accuracy</div>
-                <div id="accuracy">-</div>
-            </div>
-            <div class="stat-item">
-                <div>Total Time</div>
-                <div id="totalTime">-</div>
-            </div>
-        </div>
-        <div class="share-preview" id="sharePreview"></div>
-        <div class="share-options">
-            <button onclick="shareResults('text')">Share Text</button>
-            <button onclick="shareResults('grid')">Share Grid</button>
-        </div>
-    </div>
+    <div id="errorMessage" class="error-message">Not in word list</div>
 
-    <div id="devMode" class="dev-mode">
-        Answer: <span id="devAnswer"></span>
-    </div>
-
+    <script src="words.js"></script>
     <script>
+        // Move all variable declarations to the top
         const WORD_LENGTH = 5;
-        const TRIES = 6; // Changed back to 6
-        const WORDS = ['WORLD', 'GHOST', 'PLANT', 'BRAIN', 'STEAM', 'PIXEL'];
-        
-        let currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+        const TRIES = 6;
+        const WORDS = window.WORD_LIST || [
+            'WORLD', 'GHOST', 'PLANT', 'BRAIN', 'STEAM', 'PIXEL', 'AUDIO',
+            'BLOCK', 'CHART', 'DANCE', 'EQUAL', 'FINAL', 'GRADE', 'HEART'
+        ];
+
+        // Game state variables - declare all at top
+        let currentGameMode = '';
+        let roomCode = '';
+        let currentWord = null;
         let currentRow = 0;
         let currentTile = 0;
         let isGameOver = false;
@@ -349,26 +400,62 @@
         let guessTimes = [];
         let isDevMode = false;
 
-        // Game mode variables
-        let currentGameMode = '';
-        let roomCode = '';
-        
+        // Add these helper functions after the constants
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function getRandomWord() {
+            // Add more entropy to the seed
+            const seed = Date.now() + Math.random() * 10000;
+            const shuffledWords = shuffleArray(WORDS);
+            const index = Math.floor(seed % shuffledWords.length);
+            return shuffledWords[index];
+        }
+
+        // Update getDailyWord to use the current date more effectively
         function getDailyWord() {
-            // Generate a word based on the current date
             const today = new Date();
-            const dateString = `${today.getFullYear()}${today.getMonth()}${today.getDate()}`;
-            const wordIndex = Number(dateString) % WORDS.length;
-            return WORDS[wordIndex];
+            const seed = today.getFullYear() * 10000 + 
+                        (today.getMonth() + 1) * 100 + 
+                        today.getDate();
+            const shuffledWords = shuffleArray(WORDS);
+            return shuffledWords[seed % shuffledWords.length];
+        }
+
+        // Initialize game function
+        function initGame() {
+            currentWord = getRandomWord();
+            currentRow = 0;
+            currentTile = 0;
+            isGameOver = false;
+            startTime = Date.now();
+            guessTimes = [];
+            initBoard();
         }
 
         function startGame(mode) {
             currentGameMode = mode;
             const entryScreen = document.getElementById('entryScreen');
+            const gameContent = document.getElementById('gameContent');
+            
+            // Reset game state
+            currentRow = 0;
+            currentTile = 0;
+            isGameOver = false;
+            startTime = Date.now();
+            guessTimes = [];
             
             switch(mode) {
                 case 'daily':
                     currentWord = getDailyWord();
                     entryScreen.style.display = 'none';
+                    gameContent.style.display = 'flex';
                     break;
                     
                 case 'multiplayer':
@@ -376,14 +463,23 @@
                     const roomLink = `${window.location.href}?room=${roomCode}`;
                     document.getElementById('roomCode').value = roomLink;
                     document.getElementById('multiplayerOverlay').style.display = 'block';
-                    // In a real implementation, you'd set up WebSocket connection here
+                    currentWord = getRandomWord();
                     break;
                     
                 case 'unlimited':
-                    currentWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+                    currentWord = getRandomWord();
                     entryScreen.style.display = 'none';
+                    gameContent.style.display = 'flex';
                     break;
             }
+
+            // Reset the game board
+            initBoard();
+            
+            // Reset keyboard colors
+            document.querySelectorAll('.key').forEach(key => {
+                key.classList.remove('correct', 'present', 'absent');
+            });
         }
 
         function copyRoomLink() {
@@ -394,9 +490,12 @@
         }
 
         function startMultiplayerGame() {
-            // In a real implementation, you'd wait for other players
+            const entryScreen = document.getElementById('entryScreen');
+            const gameContent = document.getElementById('gameContent');
             document.getElementById('multiplayerOverlay').style.display = 'none';
-            document.getElementById('entryScreen').style.display = 'none';
+            entryScreen.style.display = 'none';
+            gameContent.style.display = 'flex';
+            initBoard();
         }
 
         // Add room code check on page load
@@ -404,12 +503,11 @@
             const urlParams = new URLSearchParams(window.location.search);
             const room = urlParams.get('room');
             if (room) {
-                currentGameMode = 'multiplayer';
                 roomCode = room;
-                document.getElementById('entryScreen').style.display = 'none';
-                // In a real implementation, you'd connect to the room here
+                startGame('multiplayer');
+            } else {
+                initGame();
             }
-            initBoard();
         };
 
         // Create game board
@@ -430,10 +528,24 @@
             }
         }
 
+        // Add this helper function before addLetter
+        function removeRowEffects(row) {
+            if (row) {
+                row.classList.remove('shake');
+            }
+        }
+
         function addLetter(letter) {
-            if (currentRow >= TRIES) return; // Add this line to prevent extra guesses
-            if (currentTile === 0) startTime = Date.now();
-            if (currentTile < WORD_LENGTH && currentRow < TRIES) {
+            if (currentRow >= TRIES || isGameOver) return;
+            
+            if (currentTile === 0) {
+                startTime = Date.now();
+                // Remove any existing effects when starting new word
+                const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
+                removeRowEffects(row);
+            }
+
+            if (currentTile < WORD_LENGTH) {
                 const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
                 const tile = row.children[currentTile];
                 tile.textContent = letter;
@@ -453,12 +565,52 @@
             }
         }
 
+        // Add dictionary validation function
+        async function isValidWord(word) {
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
+                return response.ok;
+            } catch (error) {
+                console.error('Dictionary API error:', error);
+                return true; // Fallback to accepting the word if API fails
+            }
+        }
+
+        // Update checkGuess function
         async function checkGuess() {
             const row = document.querySelector('.guess-row:nth-child(' + (currentRow + 1) + ')');
             const tiles = row.children;
             const guess = Array.from(tiles).map(tile => tile.getAttribute('data-letter')).join('');
 
-            if (guess.length !== WORD_LENGTH) return;
+            if (guess.length !== WORD_LENGTH) {
+                removeRowEffects(row);
+                row.classList.add('shake');
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = "Not enough letters";
+                errorMsg.classList.add('show');
+                
+                setTimeout(() => {
+                    removeRowEffects(row);
+                    errorMsg.classList.remove('show');
+                }, 1000);
+                return;
+            }
+
+            // Check if word exists in dictionary
+            const isValid = await isValidWord(guess);
+            if (!isValid) {
+                removeRowEffects(row);
+                row.classList.add('shake');
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = "Word does not exist";
+                errorMsg.classList.add('show');
+                
+                setTimeout(() => {
+                    removeRowEffects(row);
+                    errorMsg.classList.remove('show');
+                }, 1000);
+                return;
+            }
 
             let checkWord = currentWord;
             
@@ -612,6 +764,11 @@
             const devModeEl = document.getElementById('devMode');
             devModeEl.style.display = isDevMode ? 'block' : 'none';
             document.getElementById('devAnswer').textContent = isDevMode ? currentWord : '';
+        }
+
+        // Add helper function to cleanup animations
+        function removeRowEffects(row) {
+            row.classList.remove('shake');
         }
 
         // Event listeners
