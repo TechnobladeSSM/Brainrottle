@@ -63,7 +63,7 @@ Press `Shift + B` to toggle developer mode and see the current word.
 
 ## Future Improvements
 
-- [-] Add more words to the dictionary
+- [Y] Add more words to the dictionary
 - [ ] Implement proper multiplayer with WebSocket
 - [ ] Add persistent statistics
 - [ ] Add difficulty levels
